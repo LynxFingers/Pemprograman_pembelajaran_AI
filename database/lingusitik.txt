@@ -1,0 +1,37 @@
+A. Pengertian Linguistik
+	Linguistik adalah ilmu yang mempelajari bahasa secara ilmiah, baik dari segi bentuk, struktur, makna, maupun penggunaannya dalam komunikasi. Linguistik tidak hanya mempelajari bahasa tertentu, tetapi dapat digunakan untuk mengkaji berbagai bahasa dengan melihat bagaimana bahasa tersebut terbentuk, digunakan, dan berkembang. Misalnya, ketika seseorang meneliti mengapa kata “membaca” terbentuk dari kata dasar baca dengan penambahan imbuhan, penelitian tersebut termasuk kajian linguistik.
+
+B. Cabang-Cabang Linguistik
+	Linguistik memiliki beberapa cabang yang saling berkaitan. Fonetik mempelajari bunyi bahasa berdasarkan cara bunyi tersebut dihasilkan dan didengar, sedangkan fonologi mempelajari fungsi dan pola bunyi dalam suatu bahasa. Morfologi mempelajari struktur dan pembentukan kata, seperti perubahan ajar menjadi mengajar, pelajar, dan pembelajaran. Sintaksis mempelajari bagaimana kata disusun menjadi frasa, klausa, dan kalimat, misalnya susunan “Rina membaca buku.” Semantik mempelajari makna kata dan kalimat, sedangkan pragmatik mempelajari makna bahasa berdasarkan konteks penggunaannya.
+
+Selain itu, terdapat sosiolinguistik yang mengkaji hubungan bahasa dengan masyarakat, misalnya penggunaan bahasa yang berbeda ketika berbicara dengan teman dan ketika berbicara dalam situasi resmi. Psikolinguistik mempelajari hubungan bahasa dengan proses mental manusia, seperti bagaimana seseorang memahami dan menghasilkan bahasa. Analisis wacana mengkaji penggunaan bahasa dalam satuan yang lebih luas seperti percakapan, berita, artikel, dan pidato. Sementara itu, linguistik forensik menggunakan kajian bahasa dalam konteks hukum, misalnya menganalisis bahasa dalam dokumen hukum, pesan tertulis, atau tuturan yang berkaitan dengan suatu perkara.
+
+C. Fonetik
+	Fonetik adalah cabang linguistik yang mempelajari bunyi bahasa secara fisik, termasuk bagaimana bunyi dihasilkan oleh alat ucap, bagaimana bunyi tersebut terdengar, dan bagaimana bunyi dapat diidentifikasi. Misalnya, bunyi /p/ dan /b/ dihasilkan dengan cara yang hampir sama, tetapi memiliki perbedaan dalam getaran pita suara. Kajian fonetik dapat digunakan untuk memahami cara pengucapan bunyi dalam bahasa dan membantu menjelaskan kesalahan atau variasi pelafalan.
+
+D. Fonologi
+	Fonologi adalah cabang linguistik yang mempelajari sistem bunyi bahasa dan bagaimana bunyi tersebut berfungsi untuk membedakan makna. Misalnya, kata “paku” dan “baku” memiliki perbedaan pada bunyi awal /p/ dan /b/ yang menyebabkan perbedaan makna. Fonologi juga berkaitan dengan pola bunyi, suku kata, tekanan, intonasi, dan perubahan bunyi dalam suatu bahasa.
+
+E. Morfologi
+	Morfologi adalah cabang linguistik yang mempelajari struktur kata dan proses pembentukannya. Morfologi membahas bagaimana kata dasar dapat mengalami perubahan melalui afiksasi, reduplikasi, dan komposisi. Misalnya, kata dasar tulis dapat membentuk kata menulis, tulisan, penulis, dan menuliskan. Perubahan tersebut dapat menyebabkan perubahan makna maupun fungsi kata dalam kalimat.
+
+F. Sintaksis
+	Sintaksis adalah cabang linguistik yang mempelajari hubungan dan susunan kata dalam membentuk frasa, klausa, dan kalimat. Sintaksis melihat bagaimana setiap unsur menempati fungsi tertentu dalam kalimat. Misalnya, dalam kalimat “Dina membaca buku di perpustakaan,” kata Dina berfungsi sebagai subjek, membaca sebagai predikat, buku sebagai objek, dan di perpustakaan sebagai keterangan. Susunan unsur tersebut membentuk kalimat yang memiliki makna dan struktur yang jelas.
+
+G. Semantik
+	Semantik adalah cabang linguistik yang mempelajari makna yang terdapat dalam bahasa. Semantik dapat membahas makna kata, frasa, maupun kalimat serta hubungan makna antarunsur bahasa. Misalnya, kata “besar” memiliki makna yang berlawanan dengan “kecil”, sehingga keduanya merupakan antonim. Kata “bisa” juga dapat memiliki lebih dari satu makna, seperti “Saya bisa berenang” dan “Bisa ular itu berbahaya.” Kajian semantik membantu menjelaskan bagaimana makna dibentuk dan dipahami dalam bahasa.
+
+H. Pragmatik
+	Pragmatik adalah cabang linguistik yang mempelajari makna bahasa berdasarkan konteks penggunaannya. Sebuah tuturan dapat memiliki maksud yang berbeda bergantung pada situasi, penutur, lawan tutur, dan tujuan komunikasi. Misalnya, seseorang mengatakan “Panas sekali di sini” ketika berada di dalam ruangan. Secara langsung, tuturan tersebut menyatakan keadaan ruangan, tetapi dalam konteks tertentu dapat dimaksudkan sebagai permintaan agar seseorang membuka jendela atau menyalakan kipas. Dengan demikian, pragmatik tidak hanya melihat apa yang dikatakan, tetapi juga apa yang dimaksudkan melalui tuturan tersebut.
+
+I. Sosiolinguistik
+	Sosiolinguistik adalah cabang linguistik yang mempelajari hubungan antara bahasa dan masyarakat. Penggunaan bahasa dapat dipengaruhi oleh usia, lingkungan, pekerjaan, hubungan sosial, situasi, dan latar masyarakat. Misalnya, seorang mahasiswa dapat menggunakan bahasa yang lebih formal ketika berbicara dengan dosen, tetapi menggunakan bahasa yang lebih santai ketika berbicara dengan teman. Perbedaan tersebut menunjukkan adanya variasi bahasa sesuai dengan situasi dan hubungan sosial penuturnya.
+
+J. Psikolinguistik
+	Psikolinguistik adalah cabang linguistik yang mengkaji hubungan antara bahasa dan proses mental manusia. Kajian ini membahas bagaimana seseorang memperoleh bahasa, memahami bahasa, menyimpan kosakata, menghasilkan tuturan, serta memproses informasi bahasa. Misalnya, ketika seseorang membaca sebuah kalimat, otak tidak hanya mengenali setiap kata, tetapi juga menghubungkan kata-kata tersebut sehingga dapat memahami keseluruhan makna kalimat. Psikolinguistik juga banyak digunakan dalam kajian pemerolehan bahasa anak dan proses belajar bahasa.
+
+K. Analisis Wacana
+	Analisis wacana adalah kajian terhadap penggunaan bahasa dalam satuan yang lebih luas daripada kalimat, seperti percakapan, berita, artikel, pidato, iklan, dan teks lainnya. Analisis wacana memperhatikan hubungan antarkalimat, keterkaitan gagasan, konteks, serta tujuan komunikasi. Misalnya, dalam sebuah berita, analisis wacana dapat digunakan untuk melihat bagaimana informasi disusun, bagaimana suatu peristiwa digambarkan, dan bagaimana pilihan bahasa digunakan untuk menyampaikan informasi kepada pembaca.
+
+L. Linguistik Forensik
+	Linguistik forensik adalah cabang linguistik yang menerapkan analisis bahasa dalam konteks hukum dan penyelidikan. Bahasa dapat menjadi bagian penting dalam suatu perkara karena bukti yang berkaitan dengan hukum dapat berbentuk tulisan maupun tuturan. Misalnya, linguistik forensik dapat digunakan untuk menganalisis pesan yang diduga mengandung ancaman, dokumen hukum, percakapan, pernyataan saksi, atau karakteristik penggunaan bahasa seseorang. Analisis dilakukan berdasarkan data kebahasaan yang tersedia sehingga dapat membantu proses investigasi maupun persidangan.
