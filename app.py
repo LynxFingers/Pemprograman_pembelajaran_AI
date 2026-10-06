@@ -297,20 +297,16 @@ def ambil_potongan_relevan(
 # KONFIGURASI LINK (ISI DENGAN LINK ASLI)
 # =========================================================
 
-LINK_ABSEN = "https://forms.gle/ISI_LINK_GOOGLE_FORM_ABSEN"
-LINK_LKPD = "https://quizizz.com/join?gc=ISI_KODE_QUIZIZZ_1"
+LINK_ABSEN = "https://docs.google.com/forms/d/e/1FAIpQLSeWF9CAm0sEKZ08VFfXkUOfP1PlJ71mLNCwfajKRwySLx7MEg/viewform?usp=header"
+LINK_LKPD = "https://wayground.com/join?gc=48957805"
 LINK_RUBRIK = "https://docs.google.com/spreadsheets/d/ISI_ID_SPREADSHEET/edit"
-LINK_EVALUASI = "https://quizizz.com/join?gc=ISI_KODE_QUIZIZZ_2"
+LINK_EVALUASI = "https://wayground.com/join?gc=60289389"
 
 
 def tampilkan_link(label, url, ikon):
     """Menampilkan tombol link; memberi petunjuk jika link belum diisi."""
 
-    if "ISI_" in url:
-        st.info(
-            "Link belum diisi. Ganti nilai link pada bagian "
-            "KONFIGURASI LINK di file app.py."
-        )
+    
 
     st.link_button(
         f"{ikon} {label}",
