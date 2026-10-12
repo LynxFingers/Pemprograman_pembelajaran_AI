@@ -1,727 +1,201 @@
-import streamlit as st
 import os
 import re
-from collections import Counter
+from functools import wraps
+from flask import (Flask, render_template, request, redirect, url_for,
+                   session, flash, jsonify, abort)
+from werkzeug.security import generate_password_hash, check_password_hash
+import db
 
+BASE = os.path.dirname(os.path.abspath(__file__))
+# Lokal: baca file .env (jika ada). Di Vercel: pakai Environment Variables.
+_env = os.path.join(BASE, ".env")
+if os.path.exists(_env):
+    for line in open(_env, encoding="utf-8"):
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
-# =========================================================
-# KONFIGURASI HALAMAN
-# =========================================================
-
-st.set_page_config(
-    page_title="AI Tutor Bahasa Indonesia",
-    page_icon="📚",
-    layout="wide"
-)
-
-
-# =========================================================
-# KONFIGURASI DATABASE
-# =========================================================
-
-FOLDER_DATABASE = "database"
-
-
-# =========================================================
-# FUNGSI MEMBACA DATABASE TXT
-# =========================================================
-
-def baca_database():
-
-    data = []
-
-    if not os.path.exists(FOLDER_DATABASE):
-        os.makedirs(FOLDER_DATABASE)
-
-    daftar_file = os.listdir(FOLDER_DATABASE)
-
-    for nama_file in daftar_file:
-
-        if nama_file.lower().endswith(".txt"):
-
-            lokasi_file = os.path.join(
-                FOLDER_DATABASE,
-                nama_file
-            )
-
-            try:
-
-                with open(
-                    lokasi_file,
-                    "r",
-                    encoding="utf-8"
-                ) as file:
-
-                    isi = file.read()
-
-                data.append({
-                    "nama_file": nama_file,
-                    "isi": isi
-                })
-
-            except Exception as error:
-
-                st.error(
-                    f"Gagal membaca {nama_file}: {error}"
-                )
-
-    return data
-
-
-# =========================================================
-# MEMBERSIHKAN TEKS
-# =========================================================
-
-def bersihkan_teks(teks):
-
-    teks = teks.lower()
-
-    teks = re.sub(
-        r"[^a-zA-ZÀ-ÿ0-9\s]",
-        " ",
-        teks
-    )
-
-    teks = re.sub(
-        r"\s+",
-        " ",
-        teks
-    )
-
-    return teks.strip()
-
-
-# =========================================================
-# STOPWORDS SEDERHANA
-# =========================================================
-
-STOPWORDS = {
-    "yang",
-    "dan",
-    "di",
-    "ke",
-    "dari",
-    "pada",
-    "dengan",
-    "untuk",
-    "dalam",
-    "adalah",
-    "itu",
-    "ini",
-    "atau",
-    "apa",
-    "bagaimana",
-    "mengapa",
-    "sebutkan",
-    "jelaskan",
-    "jelaskanlah",
-    "tentang",
-    "suatu",
-    "sebuah",
-    "secara",
-    "merupakan",
-    "dapat",
-    "akan",
-    "sebagai",
-    "oleh",
-    "lebih",
-    "juga",
-    "tidak",
-    "tersebut"
+# ================= KONFIGURASI =================
+KODE_GURU = os.environ.get("KODE_GURU", "GURU2026")   # kode untuk daftar akun guru
+LINKS = {
+    "absen": "https://docs.google.com/forms/d/e/1FAIpQLSeWF9CAm0sEKZ08VFfXkUOfP1PlJ71mLNCwfajKRwySLx7MEg/viewform?usp=header",
+    "lkpd": "https://wayground.com/join?gc=48957805",
+    "evaluasi": "https://wayground.com/join?gc=60289389",
+    "video": "https://youtu.be/VAJgnAw1jmk?si=HJIrL7Ng4ctAmrQW",
+    "rubrik": "https://docs.google.com/spreadsheets/d/1G6E7D106PlvNTO9iNGTfg36TtFcboKACJXY6XF-Wp_Y/edit?usp=drivesdk",  # khusus guru
 }
-
-
-# =========================================================
-# MENGAMBIL KATA KUNCI
-# =========================================================
-
-def ambil_kata_kunci(pertanyaan):
-
-    teks = bersihkan_teks(pertanyaan)
-
-    kata = teks.split()
-
-    kata_kunci = []
-
-    for item in kata:
-
-        if len(item) > 2 and item not in STOPWORDS:
-
-            kata_kunci.append(item)
-
-    return kata_kunci
-
-
-# =========================================================
-# SISTEM PENILAIAN RELEVANSI
-# =========================================================
-
-def hitung_relevansi(pertanyaan, isi):
-
-    kata_kunci = ambil_kata_kunci(pertanyaan)
-
-    if len(kata_kunci) == 0:
-        return 0
-
-    teks_database = bersihkan_teks(isi)
-
-    kata_database = teks_database.split()
-
-    frekuensi = Counter(kata_database)
-
-    skor = 0
-
-    for kata in kata_kunci:
-
-        if kata in frekuensi:
-
-            jumlah = frekuensi[kata]
-
-            if jumlah > 10:
-                jumlah = 10
-
-            skor += jumlah
-
-    # Bonus jika frasa pertanyaan muncul
-    pertanyaan_bersih = bersihkan_teks(
-        pertanyaan
-    )
-
-    if pertanyaan_bersih in teks_database:
-
-        skor += 20
-
-    # Bonus jika kata kunci utama terdapat di judul
-    baris_awal = teks_database[:500]
-
-    for kata in kata_kunci:
-
-        if kata in baris_awal:
-
-            skor += 5
-
-    return skor
-
-
-# =========================================================
-# MENCARI MATERI
-# =========================================================
-
-def cari_materi(pertanyaan, database):
-
-    hasil = []
-
-    for data in database:
-
-        skor = hitung_relevansi(
-            pertanyaan,
-            data["isi"]
-        )
-
-        if skor > 0:
-
-            hasil.append({
-                "nama_file": data["nama_file"],
-                "isi": data["isi"],
-                "skor": skor
-            })
-
-    hasil.sort(
-        key=lambda x: x["skor"],
-        reverse=True
-    )
-
-    return hasil
-
-
-# =========================================================
-# MEMBUAT POTONGAN MATERI
-# =========================================================
-
-def ambil_potongan_relevan(
-    pertanyaan,
-    isi,
-    jumlah_maksimal=1200
-):
-
-    kata_kunci = ambil_kata_kunci(
-        pertanyaan
-    )
-
-    paragraf = re.split(
-        r"\n\s*\n|\r\n",
-        isi
-    )
-
-    paragraf_relevan = []
-
-    for p in paragraf:
-
-        p_bersih = bersihkan_teks(p)
-
-        skor = 0
-
-        for kata in kata_kunci:
-
-            if kata in p_bersih:
-
-                skor += 1
-
-        if skor > 0:
-
-            paragraf_relevan.append(
-                (skor, p.strip())
-            )
-
-    paragraf_relevan.sort(
-        key=lambda x: x[0],
-        reverse=True
-    )
-
-    hasil = ""
-
-    for skor, p in paragraf_relevan:
-
-        if len(hasil) + len(p) <= jumlah_maksimal:
-
-            hasil += p + "\n\n"
-
-    if hasil.strip() == "":
-
-        hasil = isi[:jumlah_maksimal]
-
-    return hasil.strip()
-
-
-# =========================================================
-# KONFIGURASI LINK (ISI DENGAN LINK ASLI)
-# =========================================================
-
-LINK_ABSEN = "https://docs.google.com/forms/d/e/1FAIpQLSeWF9CAm0sEKZ08VFfXkUOfP1PlJ71mLNCwfajKRwySLx7MEg/viewform?usp=header"
-LINK_LKPD = "https://wayground.com/join?gc=48957805"
-LINK_RUBRIK = "https://docs.google.com/spreadsheets/d/ISI_ID_SPREADSHEET/edit"
-LINK_EVALUASI = "https://wayground.com/join?gc=60289389"
-
-
-def tampilkan_link(label, url, ikon):
-    """Menampilkan tombol link; memberi petunjuk jika link belum diisi."""
-
-    
-
-    st.link_button(
-        f"{ikon} {label}",
-        url,
-        use_container_width=True
-    )
-
-
-def nama_materi(nama_file):
-
-    return nama_file.replace(".txt", "").replace("_", " ").title()
-
-
-# =========================================================
-# LOAD DATABASE
-# =========================================================
-
-database = baca_database()
-
-
-# =========================================================
-# HEADER APLIKASI
-# =========================================================
-
-st.title("📚 AI Tutor Bahasa Indonesia")
-
-st.write(
-    "Sistem pembelajaran berbasis Python, "
-    "Streamlit, dan Knowledge Base TXT."
-)
-
-st.divider()
-
-
-# =========================================================
-# SIDEBAR
-# =========================================================
-
-with st.sidebar:
-
-    st.header("📖 Knowledge Base")
-
-    st.write(
-        "Database dibaca otomatis dari folder:"
-    )
-
-    st.code("database/")
-
-    st.write(
-        f"Jumlah file database: **{len(database)}**"
-    )
-
-    st.divider()
-
-    if len(database) > 0:
-
-        st.subheader("Materi tersedia")
-
-        for data in database:
-
-            nama = data["nama_file"]
-
-            nama = nama.replace(
-                ".txt",
-                ""
-            )
-
-            nama = nama.replace(
-                "_",
-                " "
-            )
-
-            st.write(
-                "📄 " + nama.title()
-            )
-
-    else:
-
-        st.warning(
-            "Belum ada file TXT di folder database."
-        )
-
-
-
-# =========================================================
-# TAB MENU
-# =========================================================
-
-tab_tutor, tab_panduan, tab_absen, tab_materi, tab_lkpd, tab_rubrik, tab_evaluasi = st.tabs([
-    "💬 Tutor AI",
-    "📘 Panduan",
-    "📝 Absen",
-    "📚 Materi",
-    "🧩 LKPD",
-    "📊 Rubrik Penilaian",
-    "✅ Evaluasi"
-])
-
-
-# =========================================================
-# TAB 1: TUTOR AI (FITUR ASLI)
-# =========================================================
-
-with tab_tutor:
-
-    # =========================================================
-    # FORM PERTANYAAN
-    # =========================================================
-
-    st.subheader("💬 Tanyakan Sesuatu")
-
-    pertanyaan = st.text_area(
-        "Masukkan pertanyaan Anda:",
-        placeholder=(
-            "Contoh: Apa yang dimaksud "
-            "dengan kalimat efektif?"
-        ),
-        height=120
-    )
-
-
-    # =========================================================
-    # TOMBOL TANYAKAN
-    # =========================================================
-
-    tombol = st.button(
-        "🔍 TANYAKAN",
-        use_container_width=True
-    )
-
-
-    # =========================================================
-    # PROSES PERTANYAAN
-    # =========================================================
-
-    if tombol:
-
-        if pertanyaan.strip() == "":
-
-            st.warning(
-                "Silakan masukkan pertanyaan terlebih dahulu."
-            )
-
-        elif len(database) == 0:
-
-            st.error(
-                "Database TXT belum ditemukan."
-            )
-
+SISWA_ITEMS = [("beranda", "🏠", "Beranda"), ("panduan", "📖", "Panduan"), ("modul", "📚", "Modul"), ("tanya", "🤖", "Tanya AI")]
+GURU_ITEMS = [("ringkasan", "🏠", "Ringkasan"), ("kelas", "👥", "Isi Kelas"), ("tanya", "💬", "Pertanyaan"), ("rubrik", "📊", "Rubrik")]
+MODUL_IDS = ["tujuan", "pengertian", "struktur", "unsur", "kaidah", "jenis", "faktaopini", "cara",
+             "bandingkan", "pengalaman", "etika", "contoh", "lkpd", "evaluasi"]
+# ===============================================
+
+
+def youtube_id(url):
+    """Ambil ID video dari tautan YouTube (youtu.be, watch?v=, embed/, shorts/)."""
+    m = re.search(r"(?:youtu\.be/|v=|/embed/|/shorts/)([A-Za-z0-9_-]{11})", url or "")
+    return m.group(1) if m else ""
+
+# static_folder di public/static agar sama dengan yang disajikan Vercel (/static/...)
+app = Flask(__name__, static_folder=os.path.join(BASE, "public", "static"), static_url_path="/static")
+if os.environ.get("VERCEL") and not os.environ.get("SECRET_KEY"):
+    raise RuntimeError("SECRET_KEY belum diisi di Environment Variables Vercel.")
+app.secret_key = os.environ.get("SECRET_KEY") or "kunci-lokal-hanya-untuk-uji-coba"
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax",
+                  SESSION_COOKIE_SECURE=bool(os.environ.get("VERCEL")),
+                  PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30)
+
+
+@app.errorhandler(db.DBError)
+def db_error(e):
+    return render_template("error.html", pesan=str(e)), 500
+
+
+def current_user():
+    if not session.get("uid"):
+        return None
+    return {"id": session["uid"], "nama": session.get("nama", "?"),
+            "username": session.get("username", ""), "role": session.get("role", "siswa")}
+
+
+def login_session(u):
+    session.clear()
+    session.permanent = True
+    session.update(uid=u["id"], nama=u["nama"], username=u["username"], role=u["role"])
+
+
+def role_required(role):
+    def deco(f):
+        @wraps(f)
+        def wrap(*a, **k):
+            u = current_user()
+            if not u:
+                return redirect(url_for("login"))
+            if u["role"] != role:
+                return redirect(url_for("index"))
+            return f(u, *a, **k)
+        return wrap
+    return deco
+
+
+@app.route("/")
+def index():
+    u = current_user()
+    if not u:
+        return redirect(url_for("login"))
+    return redirect(url_for("guru" if u["role"] == "guru" else "siswa"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        un = request.form.get("username", "").strip().lower()
+        u = db.user_by_username(un)
+        if u and check_password_hash(u["password_hash"], request.form.get("password", "")):
+            login_session(u)
+            db.touch_login(u["id"])
+            return redirect(url_for("index"))
+        flash("Username atau password salah.", "err")
+    return render_template("login.html", mode="login")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        nama = request.form.get("nama", "").strip()
+        un = request.form.get("username", "").strip().lower()
+        pw = request.form.get("password", "")
+        role = request.form.get("role", "siswa")
+        if role not in ("siswa", "guru"):
+            role = "siswa"
+        if not nama or not un or len(pw) < 6:
+            flash("Lengkapi data. Password minimal 6 karakter.", "err")
+        elif not un.replace("_", "").replace(".", "").isalnum():
+            flash("Username hanya boleh huruf, angka, titik, dan garis bawah.", "err")
+        elif role == "guru" and request.form.get("kode", "") != KODE_GURU:
+            flash("Kode guru salah.", "err")
+        elif db.user_by_username(un):
+            flash("Username sudah dipakai.", "err")
         else:
-
-            with st.spinner(
-                "Sedang mencari materi..."
-            ):
-
-                hasil = cari_materi(
-                    pertanyaan,
-                    database
-                )
-
-
-            # =================================================
-            # JIKA MATERI DITEMUKAN
-            # =================================================
-
-            if len(hasil) > 0:
-
-                hasil_utama = hasil[0]
-
-                st.success(
-                    "Materi yang paling relevan ditemukan."
-                )
-
-                st.subheader(
-                    "💡 Jawaban"
-                )
-
-                jawaban = ambil_potongan_relevan(
-                    pertanyaan,
-                    hasil_utama["isi"]
-                )
-
-                st.info(jawaban)
-
-
-                # =============================================
-                # SUMBER MATERI
-                # =============================================
-
-                st.subheader(
-                    "📚 Sumber Materi"
-                )
-
-                nama_file = hasil_utama[
-                    "nama_file"
-                ]
-
-                st.write(
-                    f"**{nama_file}**"
-                )
-
-
-                # =============================================
-                # MATERI TERKAIT
-                # =============================================
-
-                if len(hasil) > 1:
-
-                    st.subheader(
-                        "📑 Materi Terkait"
-                    )
-
-                    for item in hasil[1:4]:
-
-                        with st.expander(
-                            item["nama_file"]
-                        ):
-
-                            potongan = (
-                                ambil_potongan_relevan(
-                                    pertanyaan,
-                                    item["isi"],
-                                    800
-                                )
-                            )
-
-                            st.write(
-                                potongan
-                            )
-
-
-            # =================================================
-            # JIKA TIDAK DITEMUKAN
-            # =================================================
-
-
+            try:
+                u = db.create_user(nama, un, generate_password_hash(pw), role)
+            except db.Duplicate:
+                flash("Username sudah dipakai.", "err")
             else:
-
-                st.warning(
-                    "Maaf, materi yang Anda tanyakan "
-                    "belum ditemukan dalam database."
-                )
-
-                st.write(
-                    "Coba gunakan kata kunci yang "
-                    "lebih spesifik."
-                )
+                login_session(u)
+                return redirect(url_for("index"))
+    return render_template("login.html", mode="register")
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
-# =========================================================
-# TAB 2: PANDUAN PENGGUNAAN AI PEMBELAJARAN
-# =========================================================
-
-with tab_panduan:
-
-    st.subheader("📘 Panduan Penggunaan AI Pembelajaran")
-
-    st.markdown(
-        """
-**Langkah-langkah belajar dengan AI Tutor Bahasa Indonesia:**
-
-1. **Isi absen** pada tab **Absen** (Google Form) sebelum memulai pembelajaran.
-2. **Pelajari materi** pada tab **Materi**, lalu pilih topik yang ingin dipelajari.
-3. **Tanyakan hal yang belum dipahami** pada tab **Tutor AI**. Gunakan kata kunci yang jelas,
-   misalnya: *"Apa yang dimaksud dengan kalimat efektif?"*
-4. **Kerjakan LKPD** pada tab **LKPD** (Quizizz 1) untuk melatih pemahaman.
-5. **Lihat Rubrik Penilaian** pada tab **Rubrik Penilaian** agar tahu aspek yang dinilai.
-6. **Kerjakan Evaluasi** pada tab **Evaluasi** (Quizizz 2) sebagai penilaian akhir.
-        """
-    )
-
-    st.markdown("**Tips bertanya kepada AI Tutor:**")
-
-    st.markdown(
-        """
-- Gunakan kalimat pertanyaan yang spesifik.
-- Gunakan istilah yang ada di materi (misalnya *morfologi*, *teks prosedur*, *ejaan*).
-- Jika jawaban belum sesuai, coba ubah kata kunci pertanyaan.
-        """
-    )
+# ---------------- DASHBOARD ----------------
+@app.route("/siswa")
+@role_required("siswa")
+def siswa(u):
+    extra = [("📝", "Absen", LINKS["absen"]), ("🧩", "LKPD", LINKS["lkpd"]), ("✅", "Evaluasi", LINKS["evaluasi"])]
+    return render_template("siswa.html", user=u, video_id=youtube_id(LINKS["video"]), done=db.done_modul(u["id"]),
+                           links={k: v for k, v in LINKS.items() if k != "rubrik"}, items=SISWA_ITEMS,
+                           extra=extra, cta=("Lanjutkan Belajar", "modul"),
+                           title="Belajar Berita", subtitle="Dashboard Siswa")
 
 
-# =========================================================
-# TAB 3: ABSEN (LINK GOOGLE FORM)
-# =========================================================
-
-with tab_absen:
-
-    st.subheader("📝 Absen")
-
-    st.write(
-        "Silakan isi daftar hadir melalui Google Form berikut."
-    )
-
-    tampilkan_link(
-        "Isi Absen (Google Form)",
-        LINK_ABSEN,
-        "📝"
-    )
+@app.route("/guru")
+@role_required("guru")
+def guru(u):
+    return render_template("guru.html", user=u, total_modul=len(MODUL_IDS), links=LINKS, items=GURU_ITEMS,
+                           extra=[("📊", "Rubrik Penilaian", LINKS["rubrik"])], cta=("Lihat Isi Kelas", "kelas"),
+                           rubrik_embed=LINKS["rubrik"].split("/edit")[0] + "/edit?rm=minimal",
+                           title="Kelas Berita", subtitle="Dashboard Guru")
 
 
-# =========================================================
-# TAB 4: MATERI
-# =========================================================
-
-with tab_materi:
-
-    st.subheader("📚 Materi")
-
-    if len(database) == 0:
-
-        st.warning(
-            "Belum ada file TXT di folder database."
-        )
-
-    else:
-
-        daftar_nama = sorted(
-            [d["nama_file"] for d in database],
-            key=nama_materi
-        )
-
-        pilihan = st.selectbox(
-            "Pilih materi:",
-            daftar_nama,
-            format_func=nama_materi
-        )
-
-        isi_materi = next(
-            d["isi"] for d in database
-            if d["nama_file"] == pilihan
-        )
-
-        st.markdown("### " + nama_materi(pilihan))
-
-        with st.container(height=500, border=True):
-
-            st.text(isi_materi)
-
-        st.download_button(
-            "⬇️ Unduh Materi (TXT)",
-            data=isi_materi,
-            file_name=pilihan,
-            mime="text/plain"
-        )
+# ---------------- API ----------------
+@app.route("/api/progress", methods=["POST"])
+@role_required("siswa")
+def api_progress(u):
+    d = request.get_json(silent=True) or {}
+    if d.get("modul") not in MODUL_IDS:
+        abort(400)
+    db.set_progress(u["id"], d["modul"], bool(d.get("done")))
+    return jsonify(ok=True)
 
 
-# =========================================================
-# TAB 5: LKPD (LINK QUIZIZZ 1)
-# =========================================================
-
-with tab_lkpd:
-
-    st.subheader("🧩 LKPD")
-
-    st.write(
-        "Kerjakan Lembar Kerja Peserta Didik (LKPD) "
-        "melalui Quizizz berikut."
-    )
-
-    tampilkan_link(
-        "Kerjakan LKPD (Quizizz 1)",
-        LINK_LKPD,
-        "🧩"
-    )
+@app.route("/api/tanya", methods=["POST"])
+@role_required("siswa")
+def api_tanya(u):
+    q = ((request.get_json(silent=True) or {}).get("q") or "").strip()[:300]
+    if q:
+        db.add_question(u["id"], q)
+    return jsonify(ok=True)
 
 
-# =========================================================
-# TAB 6: RUBRIK PENILAIAN (SPREADSHEET)
-# =========================================================
-
-with tab_rubrik:
-
-    st.subheader("📊 Rubrik Penilaian")
-
-    st.write(
-        "Rubrik penilaian dapat dilihat pada spreadsheet berikut."
-    )
-
-    tampilkan_link(
-        "Buka Rubrik Penilaian (Spreadsheet)",
-        LINK_RUBRIK,
-        "📊"
-    )
+@app.route("/api/kelas")
+@role_required("guru")
+def api_kelas(u):
+    rows, per = db.kelas(MODUL_IDS)
+    return jsonify(total_modul=len(MODUL_IDS), siswa=rows, per_modul=per)
 
 
-# =========================================================
-# TAB 7: EVALUASI (LINK QUIZIZZ 2)
-# =========================================================
-
-with tab_evaluasi:
-
-    st.subheader("✅ Evaluasi")
-
-    st.write(
-        "Kerjakan evaluasi akhir pembelajaran "
-        "melalui Quizizz berikut."
-    )
-
-    tampilkan_link(
-        "Kerjakan Evaluasi (Quizizz 2)",
-        LINK_EVALUASI,
-        "✅"
-    )
+@app.route("/api/pertanyaan")
+@role_required("guru")
+def api_pertanyaan(u):
+    return jsonify(pertanyaan=db.recent_questions())
 
 
-# =========================================================
-# FOOTER
-# =========================================================
+@app.route("/api/siswa/<int:uid>")
+@role_required("guru")
+def api_siswa(u, uid):
+    r = db.siswa_detail(uid)
+    if not r:
+        abort(404)
+    s, done, qs = r
+    return jsonify(siswa=s, selesai=done, pertanyaan=qs)
 
-st.divider()
 
-st.caption(
-    "AI Tutor Bahasa Indonesia | "
-    "Python + Streamlit + TXT Knowledge Base"
-)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
